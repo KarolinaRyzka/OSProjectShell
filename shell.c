@@ -43,8 +43,19 @@ char** parser(char *input) { //takes raw string from user and returns a pointer 
 
 //3. Executor
 
+int executor(char *input) {
+	char **args = parser(input);
+	pid_t pid, wpid;
+	
+	pid = fork();
+	if (pid == 0) {
+		 
+	} else {
 
 
+	}
+	return 1;
+}
 
 //4. Main
 
