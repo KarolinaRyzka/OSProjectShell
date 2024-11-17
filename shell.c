@@ -47,14 +47,55 @@ int executor(char *input) {
 	char **args = parser(input);
 	pid_t pid, wpid;
 	
+	if (args[0] == NULL){ //if empty
+		return 1;
+	}
+
+	if (strncmp(args[0], "pwd") == 0){ //print working directory
+		char cwd[1024];
+		if (getcwd(cwd, sizeof(cwd)) != NULL) {
+			printf("%s\n", cwd);
+		} else {
+			perror("best shell ever error");
+		}
+	return 1;
+	} else if (strncmp(args[0], "ls") == 0) { //list directory
+		pid = fork(); // execvp for ls
+		if (pid == 0) {
+			//child process
+			if (execvp("ls", args) == -1) {
+				perror("best shell ever error");
+			}
+			exit(EXIT_FAILURE);
+		} else if (pid < 0){
+			perror("best shell ever error");
+		} else {
+			//parent
+			do {
+				wpid = waitipid(pid, &status, WUNTRACED);
+			} while (!WIFEXITED(status) && !WIFSIGNALED(status));
+		}
+		return 1;
+	}
+
+	// handle commands (other)
 	pid = fork();
 	if (pid == 0) {
-		 
+		//child
+		if (execvp(args[0], args) == -1){
+			perror("best shell ever error");
+		}
+		exit(EXIT_FAILURE);
+	} else if (pid < 0) {
+		perror("best shell ever error");
 	} else {
-
-
-	}
-	return 1;
+		//parent
+		do {
+				wpid = waitipid(pid, &status, WUNTRACED);
+			} while (!WIFEXITED(status) && !WIFSIGNALED(status));
+		}
+		return 1;
+	
 }
 
 //4. Main
