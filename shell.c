@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <stdio.h>
 
 //1. Command Line Prompt
 void display_cl_prompt() {
@@ -20,7 +21,7 @@ char** parser(char *input) { //takes raw string from user and returns a pointer 
 	if (!tokens) {
 		fprintf(stderr, "the best shell ever: allocation error\n");
 		exit(EXIT_FAILURE); //if tokens is null then allocation failed so print error message
-
+	}
 	token = strtok(input, "\t\r\n"); //split strings in tokens based on spaces, tabs, returns, and newlines. Then returns pointer to first token in input
 	
 	while (token != NULL) {
@@ -34,24 +35,27 @@ char** parser(char *input) { //takes raw string from user and returns a pointer 
 				exit(EXIT_FAILURE);
 			}
 		}
-		token = strtok(NULL< " \t\r\n"); //get next token
+		token = strtok(NULL, " \t\r\n"); //get next token
 	}
 	tokens[curr] = NULL; //stop loop
 	return tokens;
 }
 
 
+
 //3. Executor
 
 int executor(char *input) {
 	char **args = parser(input);
-	pid_t pid, wpid;
+	pid_t pid; 
+	pid_t wpid;
+	int status;
 	
 	if (args[0] == NULL){ //if empty
 		return 1;
 	}
 
-	if (strncmp(args[0], "pwd") == 0){ //print working directory
+	if (strncmp(args[0], "pwd", 3) == 0){ //print working directory
 		char cwd[1024];
 		if (getcwd(cwd, sizeof(cwd)) != NULL) {
 			printf("%s\n", cwd);
@@ -59,7 +63,7 @@ int executor(char *input) {
 			perror("best shell ever error");
 		}
 	return 1;
-	} else if (strncmp(args[0], "ls") == 0) { //list directory
+	} else if (strncmp(args[0], "ls", 2) == 0) { //list directory
 		pid = fork(); // execvp for ls
 		if (pid == 0) {
 			//child process
@@ -72,12 +76,11 @@ int executor(char *input) {
 		} else {
 			//parent
 			do {
-				wpid = waitipid(pid, &status, WUNTRACED);
+				wpid = waitpid(pid, &status, WUNTRACED);
 			} while (!WIFEXITED(status) && !WIFSIGNALED(status));
 		}
 		return 1;
 	}
-
 	// handle commands (other)
 	pid = fork();
 	if (pid == 0) {
@@ -91,7 +94,7 @@ int executor(char *input) {
 	} else {
 		//parent
 		do {
-				wpid = waitipid(pid, &status, WUNTRACED);
+				wpid = waitpid(pid, &status, WUNTRACED);
 			} while (!WIFEXITED(status) && !WIFSIGNALED(status));
 		}
 		return 1;
@@ -99,10 +102,18 @@ int executor(char *input) {
 }
 
 //4. Main
-
-
-
-
 int main(){
+	char input[1024]; //current input limit
+	int status = 1;
+
+	while (status) {
+		display_cl_prompt();
+		if (fgets(input, sizeof(input), stdin) == NULL){
+			break; //exit on EOF
+		}
+		input[strcspn(input, "\n")] = '\0'; 
+		status = executor(input);
+	}
 	return 0;
+
 }
