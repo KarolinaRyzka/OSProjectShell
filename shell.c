@@ -104,5 +104,15 @@ int executor(char *input) {
 
 
 int main(){
+	char *input = NULL;
+	size_t bufsize = 0;
+	
+	while (1) {
+	getline(&input, &bufsize, stdin);
+	if (executor(input) == 0);
+		exit(EXIT_FAILURE);
+	}
+
+	free(input);
 	return 0;
 }
