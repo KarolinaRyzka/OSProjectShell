@@ -6,9 +6,23 @@
 #include <sys/wait.h>
 #include <stdio.h>
 
+// job table that stores PID and command
+typedef struct job{
+	pid_t pid;
+	char command[1024];
+} job_t;
+
+#define MAX_JOBS 64
+job_t jobs[MAX_JOBS];
+int job_count = 0;
+
+
+
+
+
 //1. Command Line Prompt
 void display_cl_prompt() {
-	printf("the best shell ever ~$");
+	printf("the best shell ever ~$ ");
 }
 
 //2. Parser
@@ -50,10 +64,32 @@ int executor(char *input) {
 	pid_t pid; 
 	pid_t wpid;
 	int status;
+	int background = 0;
 	
 	if (args[0] == NULL){ //if empty
 		return 1;
 	}
+
+	if (strncmp(args[0], "exit", 4) == 0){
+		printf("exiting the best shell ever ... goodbye!");
+		return 0; // exit
+	}
+
+	for (int i = 0; args[i]!=NULL; i++){ //& for background processing
+		if (strncmp(args[i], "&") == 0){
+			background = 1;
+			args[i] = NULL;
+			break;
+		}
+	}
+	
+	//handle jobs command here
+
+
+	//handle kill command here
+
+
+
 
 	if (strncmp(args[0], "pwd", 3) == 0){ //print working directory
 		char cwd[1024];
@@ -81,7 +117,7 @@ int executor(char *input) {
 		}
 		return 1;
 	}
-	// handle commands (other)
+	// load processes
 	pid = fork();
 	if (pid == 0) {
 		//child
@@ -93,12 +129,19 @@ int executor(char *input) {
 		perror("best shell ever error");
 	} else {
 		//parent
-		do {
+		if(background){
+			//add background process to job table here
+
+
+
+			do {
 				wpid = waitpid(pid, &status, WUNTRACED);
 			} while (!WIFEXITED(status) && !WIFSIGNALED(status));
+		} else {
+			printf("PID: %d\n", pid) //print process identification
 		}
-		return 1;
-	
+	}
+	return 1;
 }
 
 //4. Main
