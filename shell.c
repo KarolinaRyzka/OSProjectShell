@@ -33,7 +33,7 @@ char** parser(char *input) { //takes raw string from user and returns a pointer 
 	char *token; //temp
 
 	if (!tokens) {
-		fprintf(stderr, "shellabration: allocation error\n");
+		fprintf(stderr, "shell nah: allocation error\n");
 		exit(EXIT_FAILURE); //if tokens is null then allocation failed so print error message
 	}
 	token = strtok(input, "\t\r\n"); //split strings in tokens based on spaces, tabs, returns, and newlines. Then returns pointer to first token in input
@@ -45,7 +45,7 @@ char** parser(char *input) { //takes raw string from user and returns a pointer 
 			bufsize += 64;
 			tokens = realloc(tokens, bufsize * sizeof(char*));
 			if (!tokens) { //if realloc fails handle error
-				fprintf(stderr, "shellabration: allocation error\n");
+				fprintf(stderr, "shell nah: allocation error\n");
 				exit(EXIT_FAILURE);
 			}
 		}
@@ -75,8 +75,8 @@ int executor(char *input) {
 		return 0; // exit
 	}
 
-	for (int i = 0; args[i]!=NULL; i++){ //& for background processing
-		if (strncmp(args[i], "&") == 0){
+	for (int i = 0; args[i] != NULL; i++){ //& for background processing
+		if (strcmp(args[i], "&") == 0){
 			background = 1;
 			args[i] = NULL;
 			break;
@@ -96,7 +96,7 @@ int executor(char *input) {
 		if (getcwd(cwd, sizeof(cwd)) != NULL) {
 			printf("%s\n", cwd);
 		} else {
-			perror("shellabration error");
+			perror("shell nah error");
 		}
 	return 1;
 	} else if (strncmp(args[0], "ls", 2) == 0) { //list directory
@@ -104,11 +104,11 @@ int executor(char *input) {
 		if (pid == 0) {
 			//child process
 			if (execvp("ls", args) == -1) {
-				perror("shellabration error");
+				perror("shell nah error");
 			}
 			exit(EXIT_FAILURE);
 		} else if (pid < 0){
-			perror("shellabration error");
+			perror("shell nah error");
 		} else {
 			//parent
 			do {
@@ -122,11 +122,11 @@ int executor(char *input) {
 	if (pid == 0) {
 		//child
 		if (execvp(args[0], args) == -1){
-			perror("shellabration error");
+			perror("shell nah error");
 		}
 		exit(EXIT_FAILURE);
 	} else if (pid < 0) {
-		perror("shellabration error");
+		perror("shell nah error");
 	} else {
 		//parent
 		if(background){
@@ -138,7 +138,7 @@ int executor(char *input) {
 				wpid = waitpid(pid, &status, WUNTRACED);
 			} while (!WIFEXITED(status) && !WIFSIGNALED(status));
 		} else {
-			printf("PID: %d\n", pid) //print process identification
+			printf("PID: %d\n", pid); //print process identification
 		}
 	}
 	return 1;
