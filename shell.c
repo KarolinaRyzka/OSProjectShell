@@ -10,14 +10,11 @@
 typedef struct job{
 	pid_t pid;
 	char command[1024];
-} job_t;
+} job_;
 
 #define MAX_JOBS 64
 job_t jobs[MAX_JOBS];
 int job_count = 0;
-
-
-
 
 
 //1. Command Line Prompt
@@ -55,8 +52,6 @@ char** parser(char *input) { //takes raw string from user and returns a pointer 
 	return tokens;
 }
 
-
-
 //3. Executor
 
 int executor(char *input) {
@@ -85,6 +80,12 @@ int executor(char *input) {
 	
 	//handle jobs command here
 
+	if (strncmp(args[0], "jobs", 4) == 0){
+		for(int i = 0; i < job_count; i++){
+			printf("[%d] PID: %d Command: %s\n", i + 1, jobs[i].pid, jobs[i].command);
+		}
+		return 1;
+	}
 
 	//handle kill command here
 
@@ -117,6 +118,15 @@ int executor(char *input) {
 		}
 		return 1;
 	}
+
+	for(int i = 0; args[i] != NULL; i++){
+		if(strncmp(args[i], 0) == "&"){
+			background = 1;
+			args[i] = NULL;
+			break;   
+		}
+	}
+
 	// load processes
 	pid = fork();
 	if (pid == 0) {
@@ -131,15 +141,20 @@ int executor(char *input) {
 		//parent
 		if(background){
 			//add background process to job table here
-
-
-
+			if(job_count < MAX_JOBS){
+				jobs[job_count].pid = pid;
+				strncpy(jobs[job_count].command, input, sizeof(jobs[job_count].command)-1);
+				jobs[job_count].command[sizeof(jobs[job_count].command) - 1] = '\0';
+				job_count++;
+				printf("[Background Process] PID: %d Command: %s\n", pid, input);
+			} else {
+				printf("Job table is full. Cannot track more background jobs.\n");
+			}
+		} else {
 			do {
 				wpid = waitpid(pid, &status, WUNTRACED);
 			} while (!WIFEXITED(status) && !WIFSIGNALED(status));
-		} else {
-			printf("PID: %d\n", pid); //print process identification
-		}
+		} 	
 	}
 	return 1;
 }
