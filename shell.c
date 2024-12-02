@@ -5,7 +5,10 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <stdio.h>
+#include <signal.h>
 
+
+//jobs are tracked by the shell whereas processes are tracked by the OS.
 // job table that stores PID and command
 typedef struct job{
 	pid_t pid;
@@ -15,6 +18,11 @@ typedef struct job{
 #define MAX_JOBS 64
 job_t jobs[MAX_JOBS];
 int job_count = 0;
+
+void sigint(int sig){
+	printf("\nCaught SIGINT. Use 'kill' for specific job management.\n");
+}
+
 
 
 //1. Command Line Prompt
@@ -170,7 +178,7 @@ void clearJobs() {
 int main(){
 	char input[1024]; //current input limit
 	int status = 1;
-
+	signal(SIGINT, sigint); //ignore sigint so that shell itself doesn't terminate
 	while (status) {
 		clearJobs();
 		displayPrompt();
