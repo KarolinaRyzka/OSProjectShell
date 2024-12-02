@@ -10,7 +10,7 @@
 typedef struct job{
 	pid_t pid;
 	char command[1024];
-} job_;
+} job_t;
 
 #define MAX_JOBS 64
 job_t jobs[MAX_JOBS];
@@ -18,7 +18,7 @@ int job_count = 0;
 
 
 //1. Command Line Prompt
-void display_cl_prompt() {
+void displayPrompt() {
 	printf("time to shellabrate ~$ ");
 }
 
@@ -33,7 +33,7 @@ char** parser(char *input) { //takes raw string from user and returns a pointer 
 		fprintf(stderr, "shell nah: allocation error\n");
 		exit(EXIT_FAILURE); //if tokens is null then allocation failed so print error message
 	}
-	token = strtok(input, "\t\r\n"); //split strings in tokens based on spaces, tabs, returns, and newlines. Then returns pointer to first token in input
+	token = strtok(input, " \t\r\n"); //split strings in tokens based on spaces, tabs, returns, and newlines. Then returns pointer to first token in input
 	
 	while (token != NULL) {
 		tokens[curr] = token;
@@ -79,7 +79,6 @@ int executor(char *input) {
 	}
 	
 	//handle jobs command here
-
 	if (strncmp(args[0], "jobs", 4) == 0){
 		for(int i = 0; i < job_count; i++){
 			printf("[%d] PID: %d Command: %s\n", i + 1, jobs[i].pid, jobs[i].command);
@@ -119,13 +118,6 @@ int executor(char *input) {
 		return 1;
 	}
 
-	for(int i = 0; args[i] != NULL; i++){
-		if(strncmp(args[i], 0) == "&"){
-			background = 1;
-			args[i] = NULL;
-			break;   
-		}
-	}
 
 	// load processes
 	pid = fork();
@@ -143,7 +135,7 @@ int executor(char *input) {
 			//add background process to job table here
 			if(job_count < MAX_JOBS){
 				jobs[job_count].pid = pid;
-				strncpy(jobs[job_count].command, input, sizeof(jobs[job_count].command)-1);
+				strncpy(jobs[job_count].command, input, sizeof(jobs[job_count].command) - 1);
 				jobs[job_count].command[sizeof(jobs[job_count].command) - 1] = '\0';
 				job_count++;
 				printf("[Background Process] PID: %d Command: %s\n", pid, input);
@@ -159,13 +151,29 @@ int executor(char *input) {
 	return 1;
 }
 
-//4. Main
+//4. Clean up table
+void clearJobs() {
+	int status;
+	for (int i = 0; i < job_count; i++){
+		if (waitpid(jobs[i].pid, &status, WNOHANG) > 0){ //is job done?
+			printf("[Job Done] PID: %d Command: %s\n", jobs[i].pid, jobs[i].command);
+			for (int j = i; j < job_count - 1; j++) {
+                jobs[j] = jobs[j + 1];
+			}
+			job_count--; //clear
+			i--; //adjust idx
+		}
+	}
+}
+
+//5. Main
 int main(){
 	char input[1024]; //current input limit
 	int status = 1;
 
 	while (status) {
-		display_cl_prompt();
+		clearJobs();
+		displayPrompt();
 		if (fgets(input, sizeof(input), stdin) == NULL){
 			break; //exit on EOF
 		}
