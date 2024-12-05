@@ -124,6 +124,24 @@ int executor(char *input) {
 			} while (!WIFEXITED(status) && !WIFSIGNALED(status));
 		}
 		return 1;
+	} else if (strncmp(args[0], "gcc", 3) == 0) {
+		pid = fork();
+    		if (pid == 0) { // Child process
+        		if (execvp(args[0], args) == -1) {
+            			perror("shell nah error");
+            			exit(EXIT_FAILURE);
+        		}
+    		} else if (pid < 0) { // Fork error
+        		perror("shell nah error");
+    		} else { // Parent process
+        		do {
+            			waitpid(pid, &status, WUNTRACED);
+        		} while (!WIFEXITED(status) && !WIFSIGNALED(status));
+    		}
+
+    		return 1;
+
+
 	}
 
 
