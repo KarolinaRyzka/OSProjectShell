@@ -13,17 +13,15 @@
 typedef struct job{
 	pid_t pid;
 	char command[1024];
-} job_t;
+} job_table;
 
 #define MAX_JOBS 64
-job_t jobs[MAX_JOBS];
+job_table jobs[MAX_JOBS];
 int job_count = 0;
 
 void sigint(int sig){
 	printf("\nCaught SIGINT. Use 'kill' for specific job management.\n");
 }
-
-
 
 //1. Command Line Prompt
 void displayPrompt() {
@@ -93,10 +91,6 @@ int executor(char *input) {
 		}
 		return 1;
 	}
-
-	//handle kill command here
-
-
 
 
 	if (strncmp(args[0], "pwd", 3) == 0){ //print working directory
