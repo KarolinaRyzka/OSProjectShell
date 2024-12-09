@@ -61,115 +61,199 @@ char** parser(char *input) { //takes raw string from user and returns a pointer 
 //3. Executor
 
 int executor(char *input) {
-	char **args = parser(input);
-	pid_t pid; 
-	pid_t wpid;
-	int status;
-	int background = 0;
-	
-	if (args[0] == NULL){ //if empty
-		return 1;
-	}
 
-	if (strncmp(args[0], "exit", 4) == 0){
-		printf("leaving the shellabration ... goodbye!");
-		return 0; // exit
-	}
+   	char **args = parser(input);
+   	pid_t pid;
+   	pid_t wpid;
+   	int status;
+   	int background = 0;
 
-	for (int i = 0; args[i] != NULL; i++){ //& for background processing
-		if (strcmp(args[i], "&") == 0){
-			background = 1;
-			args[i] = NULL;
-			break;
-		}
-	}
-	
-	//handle jobs command here
-	if (strncmp(args[0], "jobs", 4) == 0){
-		for(int i = 0; i < job_count; i++){
-			printf("[%d] PID: %d Command: %s\n", i + 1, jobs[i].pid, jobs[i].command);
-		}
-		return 1;
-	}
+   	if (args[0] == NULL){
 
 
-	if (strncmp(args[0], "pwd", 3) == 0){ //print working directory
-		char cwd[1024];
-		if (getcwd(cwd, sizeof(cwd)) != NULL) {
-			printf("%s\n", cwd);
-		} else {
-			perror("shell nah error");
-		}
-	return 1;
-	} else if (strncmp(args[0], "ls", 2) == 0) { //list directory
-		pid = fork(); // execvp for ls
-		if (pid == 0) {
-			//child process
-			if (execvp("ls", args) == -1) {
-				perror("shell nah error");
-			}
-			exit(EXIT_FAILURE);
-		} else if (pid < 0){
-			perror("shell nah error");
-		} else {
-			//parent
-			do {
-				wpid = waitpid(pid, &status, WUNTRACED);
-			} while (!WIFEXITED(status) && !WIFSIGNALED(status));
-		}
-		return 1;
-	} else if (strncmp(args[0], "gcc", 3) == 0) {
-		pid = fork();
-    		if (pid == 0) { // Child process
-        		if (execvp(args[0], args) == -1) {
-            			perror("shell nah error");
-            			exit(EXIT_FAILURE);
-        		}
-    		} else if (pid < 0) { // Fork error
-        		perror("shell nah error");
-    		} else { // Parent process
-        		do {
-            			waitpid(pid, &status, WUNTRACED);
-        		} while (!WIFEXITED(status) && !WIFSIGNALED(status));
-    		}
+        	// If empty
+       		return 1;
+   	}
 
-    		return 1;
+    	if (strncmp(args[0], "exit", 4) == 0){
+       		printf("leaving the shellabration ... goodbye!");
+       		return 0; // exit
+    	}
 
+    for (int i = 0; args[i] != NULL; i++){
+        	// & for background processing
+    	if (strcmp(args[i], "&") == 0){
+            background = 1;
+            args[i] = NULL;
+            break;
+        }
+    }
 
-	}
+    // Handle jobs command here
+    if (strncmp(args[0], "jobs", 4) == 0){
+        for(int i = 0; i < job_count; i++){
+            printf("[%d] PID: %d Command: %s\n", i + 1, jobs[i].pid, jobs[i].command);
+        }
+        return 1;
+    }
 
+    if (strncmp(args[0], "pwd", 3) == 0){
+        // Print working directory
+        char cwd[1024];
+        if (getcwd(cwd, sizeof(cwd)) != NULL) {
+            printf("%s\n", cwd);
+        } else {
+            perror("shell nah error");
+        }
+        return 1;
+    } else if (strncmp(args[0], "ls", 2) == 0) {
+        // List directory
+        pid = fork();
+        if (pid == 0) {
+            // Child process
+            if (execvp("ls", args) == -1) {
+                perror("shell nah error");
+                exit(EXIT_FAILURE);
+            }
+        } else if (pid < 0){
+            perror("shell nah error");
+        } else {
+            // Parent process
+            do {
+                wpid = waitpid(pid, &status, WUNTRACED);
+            } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+        }
+        return 1;
+    } else if (strncmp(args[0], "gcc", 3) == 0) {
+        pid = fork();
+        if (pid == 0) {
+            // Child process
+            if (execvp(args[0], args) == -1) {
+                perror("shell nah error");
+                exit(EXIT_FAILURE);
+            }
+        } else if (pid < 0) {
+            // Fork error
+            perror("shell nah error");
+        } else {
+            // Parent process
+            do {
+                waitpid(pid, &status, WUNTRACED);
+            } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+        }
+        return 1;
 
-	// load processes
-	pid = fork();
-	if (pid == 0) {
-		//child
-		if (execvp(args[0], args) == -1){
-			perror("shell nah error");
-		}
-		exit(EXIT_FAILURE);
-	} else if (pid < 0) {
-		perror("shell nah error");
-	} else {
-		//parent
-		if(background){
-			//add background process to job table here
-			if(job_count < MAX_JOBS){
-				jobs[job_count].pid = pid;
-				strncpy(jobs[job_count].command, input, sizeof(jobs[job_count].command) - 1);
-				jobs[job_count].command[sizeof(jobs[job_count].command) - 1] = '\0';
-				job_count++;
-				printf("[Background Process] PID: %d Command: %s\n", pid, input);
-			} else {
-				printf("Job table is full. Cannot track more background jobs.\n");
-			}
-		} else {
-			do {
-				wpid = waitpid(pid, &status, WUNTRACED);
-			} while (!WIFEXITED(status) && !WIFSIGNALED(status));
-		} 	
-	}
-	return 1;
+    } else if (strncmp(args[0], "vim", 3) == 0) {
+
+        pid = fork();
+
+        if (pid == 0) {
+
+            // Child process
+            if (execvp("vim", args) == -1) {
+
+                perror("shell nah error");
+                exit(EXIT_FAILURE);
+
+            }
+
+        } else if (pid < 0) {
+
+            // Fork error
+            perror("shell nah error");
+
+        } else {
+            // Parent process
+            do {
+
+                wpid = waitpid(pid, &status, WUNTRACED);
+
+            } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+        }
+        return 1;
+
+    } else if (strncmp(args[0], "less", 4) == 0) {
+
+    	pid = fork();
+
+    	if (pid == 0) {
+        // Child process
+        	if (execvp("less", args) == -1) {
+
+            		perror("shell nah error");
+            		exit(EXIT_FAILURE);
+
+        	}
+
+    	} else if (pid < 0) {
+
+        	// Fork error
+        	perror("shell nah error");
+
+    	} else {
+
+        	// Parent process
+        	do {
+
+            		wpid = waitpid(pid, &status, WUNTRACED);
+
+        	} while (!WIFEXITED(status) && !WIFSIGNALED(status));
+    	}
+    	return 1;
+
+	} else if (strncmp(args[0], "mkdir", 5) == 0) {
+    		pid = fork();
+
+    		if (pid == 0) {
+        		// Child process
+        		if (execvp("mkdir", args) == -1) {
+            		perror("shell nah error");
+            		exit(EXIT_FAILURE);
+        	}
+    	} else if (pid < 0) {
+        	// Fork error
+        	perror("shell nah error");
+    	} else {
+        	// Parent process
+        	do {
+            		wpid = waitpid(pid, &status, WUNTRACED);
+        	} while (!WIFEXITED(status) && !WIFSIGNALED(status));
+    	}
+    	return 1;
 }
+
+    // Load processes
+    pid = fork();
+    if (pid == 0) {
+        // Child process
+        if (execvp(args[0], args) == -1){
+            perror("shell nah error");
+            exit(EXIT_FAILURE);
+        }
+    } else if (pid < 0) {
+        perror("shell nah error");
+    } else {
+        // Parent process
+        if(background){
+            // Add background process to job table here
+            if(job_count < MAX_JOBS){
+                jobs[job_count].pid = pid;
+                strncpy(jobs[job_count].command, input, sizeof(jobs[job_count].command) - 1);
+                jobs[job_count].command[sizeof(jobs[job_count].command) - 1] = '\0';
+                job_count++;
+                printf("[Background Process] PID: %d Command: %s\n", pid, input);
+            } else {
+                printf("Job table is full. Cannot track more background jobs.\n");
+            }
+        } else {
+            do {
+                wpid = waitpid(pid, &status, WUNTRACED);
+            } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+        }
+    }
+    return 1;
+}
+
 
 //4. Clean up table
 void clearJobs() {
